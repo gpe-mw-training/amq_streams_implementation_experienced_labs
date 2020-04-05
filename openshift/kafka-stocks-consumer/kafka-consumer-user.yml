@@ -1,0 +1,27 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: stocks-consumer
+  labels:
+    strimzi.io/cluster: kafka-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: stocks
+          patternType: literal
+        operation: Read
+      - resource:
+          type: topic
+          name: stocks
+          patternType: literal
+        operation: Describe
+      - resource:
+          type: group
+          name: stocks-consumer
+          patternType: literal
+        operation: Read
