@@ -1,0 +1,9 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaUser
+metadata:
+  name: us-stocks
+  labels:
+    strimzi.io/cluster: us-cluster
+spec:
+  authentication:
+    type: tls

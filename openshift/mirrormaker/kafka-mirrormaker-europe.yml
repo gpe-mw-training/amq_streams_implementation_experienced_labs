@@ -1,0 +1,62 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaMirrorMaker2
+metadata:
+  name: mirror-maker-europe
+  labels:
+    app: mirror-maker-europe
+spec:
+  version: 2.4.0
+  replicas: 1
+  connectCluster: "europe"
+  clusters:
+    - alias: "europe"
+      bootstrapServers: europe-cluster-kafka-bootstrap.kafka-mirrormaker-europe-${GUID}.svc:9093
+      config:
+        config.storage.replication.factor: 1
+        offset.storage.replication.factor: 1
+        status.storage.replication.factor: 1
+      authentication:
+        certificateAndKey:
+          certificate: user.crt
+          key: user.key
+          secretName: europe-stocks
+        type: tls
+      tls:
+        trustedCertificates:
+        - certificate: ca.crt
+          secretName: europe-cluster-cluster-ca-cert  
+    - alias: "us"
+      bootstrapServers: us-cluster-kafka-bootstrap.kafka-mirrormaker-us-${GUID}.svc:9092
+      authentication:
+        certificateAndKey:
+          certificate: user.crt
+          key: user.key
+          secretName: us-stocks
+        type: tls
+      tls:
+        trustedCertificates:
+        - certificate: ca.crt
+          secretName: us-cluster-cluster-ca-cert
+  mirrors:
+    - sourceCluster: "us"
+      targetCluster: "europe"
+      sourceConnector:
+        config:
+          replication.factor: 3
+          offset-syncs.topic.replication.factor: 1
+          sync.topic.acls.enabled: "false"
+      heartbeatConnector:
+        config:
+          heartbeats.topic.replication.factor: 1
+      checkpointConnector:
+        config:
+          checkpoints.topic.replication.factor: 1
+      topicsPattern: ".*"
+      groupsPattern: ".*"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 1Gi

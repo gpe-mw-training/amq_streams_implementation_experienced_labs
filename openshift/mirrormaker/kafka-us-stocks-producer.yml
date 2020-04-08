@@ -1,0 +1,112 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: us-stocks-producer
+data:
+  application.properties: >-
+    mp.messaging.outgoing.stocks.bootstrap.servers=us-cluster-kafka-bootstrap.kafka-mirrormaker-us-${GUID}.svc:9093
+
+    mp.messaging.outgoing.stocks.topic=stocks
+
+    mp.messaging.outgoing.stocks.security.protocol=SSL
+
+    mp.messaging.outgoing.stocks.ssl.truststore.type=PKCS12
+
+    mp.messaging.outgoing.stocks.ssl.truststore.location=/certs/kafka-cluster/kafka-cluster-ca.p12
+
+    mp.messaging.outgoing.stocks.ssl.truststore.password=${US_CA_CERT_PASSWD}
+
+    mp.messaging.outgoing.stocks.ssl.keystore.type=PKCS12
+
+    mp.messaging.outgoing.stocks.ssl.keystore.location=/certs/kafka-user/kafka-user.p12
+
+    mp.messaging.outgoing.stocks.ssl.keystore.password=${US_STOCKS_CERT_PASSWD}
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    app: us-stocks-producer
+  name: us-stocks-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: us-stocks-producer
+      app: us-stocks-producer
+  template:
+    metadata:
+      labels:
+        deployment: us-stocks-producer
+        app: us-stocks-producer
+    spec:
+      containers:
+        - env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          image: quay.io/btison/quarkus-kafka-stocks-producer:latest
+          imagePullPolicy: IfNotPresent
+          name: us-stocks-producer
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /deployments/config
+              name: config
+            - name: kafka-certs
+              mountPath: /certs/kafka-cluster
+            - name: kafka-user-certs
+              mountPath: /certs/kafka-user
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: us-stocks-producer
+          name: config
+        - name: kafka-certs
+          secret:
+            secretName: kafka-certs
+            defaultMode: 420
+        - name: kafka-user-certs
+          secret:
+            secretName: us-stocks-certs
+            defaultMode: 420

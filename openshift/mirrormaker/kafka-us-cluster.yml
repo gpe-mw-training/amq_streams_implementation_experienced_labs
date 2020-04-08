@@ -1,0 +1,132 @@
+---
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: us-cluster
+spec:
+  entityOperator:
+    tlsSidecar:
+      livenessProbe:
+        initialDelaySeconds: 20
+        timeoutSeconds: 5
+      readinessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+      resources:
+        limits:
+          cpu: 50m
+          memory: 100M
+        requests:
+          cpu: 50m
+          memory: 100M
+    topicOperator:
+      livenessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+      readinessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 5
+      resources:
+        limits:
+          cpu: 500m
+          memory: 500M
+        requests:
+          cpu: 250m
+          memory: 250M
+    userOperator:
+      livenessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+      readinessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 5
+      resources:
+        limits:
+          cpu: 250m
+          memory: 250M
+        requests:
+          cpu: 150m
+          memory: 150M
+  kafka:
+    tlsSidecar:
+      livenessProbe:
+        initialDelaySeconds: 20
+        timeoutSeconds: 5
+      readinessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+      resources:
+        limits:
+          cpu: 100m
+          memory: 100M
+        requests:
+          cpu: 50m
+          memory: 50M
+    config:
+      log.message.format.version: 2.4
+      offsets.topic.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      transaction.state.log.replication.factor: 3
+    listeners:
+      tls:
+        authentication: 
+          type: tls
+      external:
+        type: route
+        tls: true
+        authentication:
+          type: tls
+    resources:
+      limits:
+        cpu: '1'
+        memory: 2G
+      requests:
+        cpu: 300m
+        memory: 500M
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 45
+      timeoutSeconds: 5
+    version: 2.4.0
+    storage:
+      deleteClaim: true
+      size: 2Gi
+      type: persistent-claim
+    replicas: 3
+    jvmOptions:
+      gcLoggingEnabled: false
+  zookeeper:
+    livenessProbe:
+      initialDelaySeconds: 30
+      timeoutSeconds: 5
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    replicas: 3
+    resources:
+      limits:
+        cpu: 500m
+        memory: 250M
+      requests:
+        cpu: 100m
+        memory: 100M
+    storage:
+      deleteClaim: true
+      size: 1Gi
+      type: persistent-claim
+    tlsSidecar:
+      livenessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+      readinessProbe:
+        initialDelaySeconds: 20
+        timeoutSeconds: 5
+      resources:
+        limits:
+          cpu: 100m
+          memory: 100M
+        requests:
+          cpu: 50m
+          memory: 50M
